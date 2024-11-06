@@ -1,3 +1,6 @@
+# Aleksis Livshits
+# CS361: Software Engineering I
+# Assignment 5: Milestone 1
 
 users = {}
 
