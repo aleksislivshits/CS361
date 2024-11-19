@@ -26,4 +26,6 @@ else:
 
 
 UML Diagram:
+
+
 <img width="687" alt="Screenshot 2024-11-18 at 5 04 40 PM" src="https://github.com/user-attachments/assets/2aa7c49d-492a-4fe0-8045-adc32edb5725">
