@@ -16,7 +16,7 @@ data = {
 }
 
 How does one RECEIVE data from the implemented microservice?
-- Once an HTTP GET request is seen by the program, the microservice will send the requested data back. The requests.get('http://localhost:3225/budget') will send a GET request to that URL and then then, once the response is successful, it will process the JSON data.
+- Once an HTTP GET request is seen by the program, the microservice will send the requested data back. The requests.get('http://localhost:5000/convert') will send a GET request to that URL and then then, once the response is successful, it will process the JSON data.
 
 response = requests.post(url, json=data)
 if response.status_code == 200:
