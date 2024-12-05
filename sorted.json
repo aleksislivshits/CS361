@@ -1,7 +1,0 @@
-{
-  "categories": [
-    {"name": "Food", "amount": 150},
-    {"name": "Entertainment", "amount": 200},
-    {"name": "Transport", "amount": 100}
-  ]
-}
