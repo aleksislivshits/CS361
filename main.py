@@ -1,8 +1,27 @@
 # Aleksis Livshits
 # CS361: Software Engineering I
-# Assignment 5: Milestone 1
+# Final Portfolio Project
+
+
+import json
+import os
+import requests
 
 users = {}
+
+
+def save_budget_data(budget_data, filename='budget_data.json'):
+    with open(filename, 'w') as file:
+        json.dump(budget_data, file, indent=4)
+    print("Budget saved successfully!")
+
+
+def load_budget_file(filename='budget_data.json'):
+    if not os.path.exists(filename):
+        return []
+    with open(filename, 'r') as file:
+        return json.load(file)
+
 
 def register(email, password):
     """Register a new user with an email and password."""
@@ -12,16 +31,19 @@ def register(email, password):
         users[email] = password
         print("Registration successful.")
 
+
 def login(email, password):
     """Log in an existing user."""
     if email in users and users[email] == password:
         print("Login successful.")
         print("WARNING: We will never share or sell your data or information to other companies. This software and its "
-              "features will always be free to use!") # I.H. 3
+              "features will always be free to use!")  # I.H. 3
         return True
     else:
         print("Invalid email or password.")
         return False
+
+
 class Motivation:
     """Class to manage motivational quotes and images."""
     def __init__(self):
@@ -52,45 +74,20 @@ class Motivation:
         else:
             print("Invalid index.")
 
+
 class Budget:
     """Class to manage budgeting categories and operations."""
     def __init__(self):
         self.categories = {}
 
-    def add_category(self):
+    def add_category(name, amount):
         """Add a new budgeting category with a color."""
-        name = input("Enter category name: ")
-        color = input("Enter font color (red, green, blue, yellow, purple, pink): ")
+        budget_data = load_budget_file()
+        category = {"name": name, "amount": amount}
+        budget_data.update(category)
+        save_budget_data(budget_data)
+        print(f"Category '{name}' with amount {amount} added.")
 
-        if color not in ['red', 'green', 'blue', 'yellow', 'purple', 'pink']:
-            print("Invalid color. Defaulting to black.")
-            color = 'black'
-
-        self.categories[name] = {'balance': 0, 'color': color}
-        print(f"Category '{name}' added with color '{color}'.")
-
-    def change_color(self, category, new_color):
-        """Change the color of a specified category."""
-        if category in self.categories:
-            if new_color in ['red', 'green', 'blue', 'yellow', 'purple', 'pink']:
-                self.categories[category]['color'] = new_color
-                print(f"Color for {category} changed to {new_color}.")
-            else:
-                print("Invalid color choice.")
-        else:
-            print("Category not found.")
-
-    def edit_category(self, old_name, new_name, new_color):
-        """Edit an existing category's name and color."""
-        if old_name in self.categories:
-            if new_color not in ['red', 'green', 'blue', 'yellow', 'purple', 'pink']:
-                print("Invalid color. Defaulting to black.")
-                new_color = 'black'
-            self.categories[new_name] = self.categories.pop(old_name)
-            self.categories[new_name]['color'] = new_color
-            print(f"Category '{old_name}' updated to '{new_name}' with color '{new_color}'.")
-        else:
-            print("Category not found.")
 
     def delete_category(self, category_name):
         """Delete a category by name."""
@@ -102,9 +99,16 @@ class Budget:
 
     def display_summary(self):
         """Display a summary of all budgeting categories and their balances."""
-        print("Budget Summary:")
-        for category, details in self.categories.items():
-            print(f"{category}: {details['balance']} (Color: {details['color']})")
+        budget_data = load_budget_file()
+        if not budget_data:
+            print("No budget data found!")
+        else:
+            print("\nYour Budget is: ")
+            for category in budget_data:
+                print(f"{category['name']}: ${category['amount']}")
+        # print("Budget Summary:")
+        # for category, details in self.categories.items():
+        #     print(f"{category}: {details['balance']} (Color: {details['color']})")
 
     def deposit(self, category, amount):
         """Deposit an amount into a specified category."""
@@ -147,6 +151,21 @@ class Budget:
         for category, balance in self.categories.items():
             print(f"{category}: {balance}")
 
+    def set_reminder_time(self):
+        reminder_time = input("Enter your preferred reminder time (HH:MM format, 12-hour): ")
+
+        response = requests.post('http://127.0.0.1:5003/set-reminder-time', json={"reminder_time": reminder_time})
+        if response.status_code == 200:
+            print(f"Reminder time set to {reminder_time}.")
+        else:
+            print("Failed to set your reminder time. Make sure that you entered your time in the format HH:MM.")
+
+    def daily_reminder(self):
+        response = requests.get('http://127.0.0.1:5003/daily-reminder')
+        if response.status_code == 200:
+            reminder_data = response.json()
+            print(reminder_data['reminder'])
+
     def display_budgeting_resources(self):
         """Display links to external budgeting resources."""
         print("How to Budget Resources:")
@@ -156,10 +175,51 @@ class Budget:
         print("3. [How to Make a Budget](https://www.ramseysolutions.com/budgeting/how-to-make-a-budget?srsltid=AfmBOor"
               "2FhAPN4hwEjxekqKu8Pd19q2w_aTyMFPFU7P0GD9naFr-UDnR)")
 
+
+class SavingsGoal:
+    def __init__(self, goal_amount):
+        self.goal_amount = goal_amount
+        self.current_savings = 0
+
+    def add_savings(self, amount):
+        self.current_savings += amount
+        print(f"Current savings: ${self.current_savings:.2f}")
+
+    def savings_progress(self):
+        progress_percentage = (self.current_savings / self.goal_amount) * 100
+        return progress_percentage
+
+    def display_progress_bar(self):
+        progress_percentage = self.savings_progress()
+        bar_length = 50  # Length of the progress bar
+        filled_length = int(bar_length * progress_percentage // 100)
+        bar = '█' * filled_length + '-' * (bar_length - filled_length)
+        print(f"Progress: |{bar}| {progress_percentage:.2f}% of your goal achieved.")
+
+class BudgetingApp:
+    def __init__(self):
+        self.savings_goal = None
+
+    def set_savings_goal(self):
+        goal_amount = float(input("Enter your savings goal amount: $"))
+        self.savings_goal = SavingsGoal(goal_amount)
+
+    def input_savings(self):
+        if self.savings_goal is None:
+            print("Please set your savings goal first.")
+            return
+        amount = float(input("Enter the amount you want to add to your savings: $"))
+        self.savings_goal.add_savings(amount)
+        self.savings_goal.display_progress_bar()
+
+
 # In the main function, update the call to add_category
-def main():
+def main(self=None):
     """Main function to run the user login and budgeting system."""
     motivation = Motivation()  # Initialize the Motivation class
+    budget = Budget()
+    budgeting_app = BudgetingApp()
+    budget = load_budget_file()
     while True:
         print("\n1. Register")
         print("2. Login")
@@ -177,22 +237,27 @@ def main():
                 my_budget = Budget()
                 while True:
                     print("\nBudget App Menu:")
-                    print("1. Add category")
+                    print("1. Add budgeting category")
                     print("2. Edit category")
                     print("3. Delete category")
-                    print("4. Deposit")
-                    print("5. Withdraw")
-                    print("6. Transfer")
+                    print("4. Add expenses, debt, etc.")
+                    print("5. Withdraw expenses")
+                    print("6. Transfer expenses")
                     print("7. Get balance")
                     print("8. Display summary")
                     print("9. Motivation")
                     print("10. How to Budget") # I.H. 1
                     print("11. Logout")
+                    print("12. BONUS: Set Savings Goal")
+                    print("13. BONUS: Set Reminder Time")
+                    print("14. BONUS: View Daily Reminder")
 
                     choice = input("Enter your choice: ")
 
                     if choice == '1':
-                        my_budget.add_category()  # Call the updated method
+                        name = input("Enter category name: ")
+                        amount = float(input("Enter amount: $"))
+                        Budget.add_category(name, amount)
 
                     elif choice == '2':
                         old_name = input("Enter the current category name: ")
@@ -205,9 +270,19 @@ def main():
                         print(f"Your category {category_name} has been deleted!")
 
                     elif choice == '4':
-                        category_name = input("Enter category name: ")
-                        amount = float(input("Enter deposit amount: "))
-                        my_budget.deposit(category_name, amount)
+                        budget['income'] = float(input("Enter your total income: "))
+                        print("\nEnter your expenses (type 'done' when finished):")
+                        expenses = []
+                        while True:
+                            category = input("Enter category name: ")
+                            if category.lower() == 'done':
+                                break
+                            amount = float(input(f"Enter the amount for {category}:"))
+                        budget['debt'] = float(input("Enter your current debt: "))
+                        budget['expenses'] = expenses
+                        save_budget_data(budget)
+                        print("\nYour budget data has been successfully saved!")
+
                     elif choice == '5':
                         category_name = input("Enter category name: ")
                         amount = float(input("Enter withdrawal amount: "))
@@ -251,12 +326,20 @@ def main():
                         my_budget.display_budgeting_resources() # Calling the method here
                     elif choice == '11':
                         break
+                    elif choice == '12':
+                        budget['goal'] = float(input("Enter your budget goal: "))
+                        save_budget_data(budget)
+                    elif choice == '13':
+                        Budget.set_reminder_time(self)
+                    elif choice == '14':
+                        Budget.daily_reminder(self)
                     else:
                         print("Invalid choice.")
         elif choice == '3':
             break
         else:
             print("Invalid choice.")
+
 
 if __name__ == "__main__":
     main()
